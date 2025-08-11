@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  SPV
+  MANDOR
+}
+
+enum WoodUnit {
+  KG
+  BATANG
+  KENDARAAN
+}
+
+model User {
+  id       String   @id @db.VarChar(150)
+  username String   @unique @db.VarChar(20)
+  password String   @db.VarChar(100)
+  name     String   @db.VarChar(100)
+  role     UserRole @default(ADMIN)
+  isActive Boolean  @default(true) @map("is_active")
+
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime?      @updatedAt @map("updated_at")
+  woodPriceLogs WoodPriceLog[]
+  refreshToken  Refresh_Token?
+
+  @@map("user")
+}
+
+model Garden {
+  id       Int     @id @default(autoincrement())
+  name     String  @db.VarChar(100)
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime?    @updatedAt @map("updated_at")
+  woods     GardenWood[]
+
+  @@map("garden")
+}
+
+model Wood {
+  id       Int      @id @default(autoincrement())
+  name     String   @db.VarChar(100)
+  price    Decimal  @db.Decimal(18, 2)
+  unit     WoodUnit
+  isActive Boolean  @default(true) @map("is_active")
+
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime?      @updatedAt @map("updated_at")
+  priceLogs WoodPriceLog[]
+  gardens   GardenWood[]
+
+  @@map("wood")
+}
+
+model WoodPriceLog {
+  id          Int      @id @default(autoincrement())
+  woodId      Int      @map("wood_id")
+  wood        Wood     @relation(fields: [woodId], references: [id])
+  oldName     String   @db.VarChar(100)
+  oldUnit     WoodUnit
+  oldPrice    Decimal  @map("old_price") @db.Decimal(18, 2)
+  newPrice    Decimal  @map("new_price") @db.Decimal(18, 2)
+  updatedById String   @map("updated_by_id") @db.VarChar(150)
+  updatedBy   User     @relation(fields: [updatedById], references: [id])
+
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  @@map("wood_price_log")
+}
+
+model GardenWood {
+  id       Int    @id @default(autoincrement())
+  gardenId Int
+  garden   Garden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
+  woodId   Int
+  wood     Wood   @relation(fields: [woodId], references: [id], onDelete: Cascade)
+  quantity Int
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@unique([gardenId, woodId])
+  @@map("garden_wood")
+}
+
+model Vehicle {
+  id       Int     @id @default(autoincrement())
+  name     String  @db.VarChar(100)
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("vehicle")
+}
+
+model Customer {
+  id       Int     @id @default(autoincrement())
+  name     String  @db.VarChar(100)
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("customer")
+}
+
+model HistoryTransaction {
+  id String @id @db.VarChar(150)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("history_Transaction")
+}
+
+model Refresh_Token {
+  id                Int     @id @default(autoincrement())
+  userId            String  @unique @map("user_id") @db.VarChar(150)
+  user              User    @relation(fields: [userId], references: [id])
+  refreshToken      String  @map("refresh_token") @db.VarChar(250)
+  notificationToken String? @map("notification_token") @db.VarChar(250)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("refresh_token")
+}
