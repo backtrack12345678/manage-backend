@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import {
-  UpdateTransactionDto,
-  ValidateTransactionDto,
-} from './dto/update-transaction.dto';
+import { ValidateTransactionDto } from './dto/update-transaction.dto';
 import { GardenRepository } from '../garden/repositories/garden.repository';
 import { ErrorService } from '../common/error/error.service';
 import { VehicleService } from '../vehicle/vehicle.service';
@@ -155,9 +152,9 @@ export class TransactionService {
     return this.toTransactionResponse(transaction, request);
   }
 
-  update(id: number, updateTransactionDto: UpdateTransactionDto) {
-    return `This action updates a #${id} transaction`;
-  }
+  // update(id: number, updateTransactionDto: UpdateTransactionDto) {
+  //   return `This action updates a #${id} transaction`;
+  // }
 
   async validate(
     auth: IAuth,
@@ -385,7 +382,8 @@ export class TransactionService {
         piecesQty: tx.woodPiecesQty,
         unitsQty: tx.woodUnitsqty,
       },
-      totalPrice: tx.totalPrice?.toString() ?? null, // ✅ decimal → string
+      totalPrice: tx.totalPrice?.toString() ?? null, // ✅ decimal → string,
+      totalPaid: tx.totalPrice?.toString() ?? null,
       status: tx.status,
       type: tx.type,
       urlFile: `${this.fileService.getHostFile(request)}/file/transaction/${tx.namaFile}`,

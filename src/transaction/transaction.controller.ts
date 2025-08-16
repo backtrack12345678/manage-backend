@@ -16,7 +16,6 @@ import {
 import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import {
-  UpdateTransactionDto,
   UpdateValidatedTransactionDto,
   ValidateTransactionDto,
 } from './dto/update-transaction.dto';
@@ -95,13 +94,13 @@ export class TransactionController {
     };
   }
 
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateTransactionDto: UpdateTransactionDto,
-  ) {
-    return this.transactionService.update(+id, updateTransactionDto);
-  }
+  // @Patch(':id')
+  // update(
+  //   @Param('id') id: string,
+  //   @Body() updateTransactionDto: UpdateTransactionDto,
+  // ) {
+  //   return this.transactionService.update(+id, updateTransactionDto);
+  // }
 
   @Auth()
   @Roles(UserRole.ADMIN, UserRole.SPV)
