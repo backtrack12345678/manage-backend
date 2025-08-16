@@ -8,6 +8,7 @@ import {
   Delete,
   ParseIntPipe,
   Req,
+  HttpCode,
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
@@ -26,6 +27,7 @@ export class CustomerController {
 
   @Auth()
   @Roles(UserRole.ADMIN)
+  @HttpCode(201)
   @Post()
   async create(
     @Body() payload: CreateCustomerDto,

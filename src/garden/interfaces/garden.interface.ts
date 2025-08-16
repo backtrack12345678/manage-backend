@@ -13,6 +13,14 @@ export interface IGardenResponse {
   woods?: IGardenWoodsResponse[];
 }
 
+export interface IGardenReportResponse {
+  name: string;
+  woods: {
+    name: string;
+    total: number;
+  }[];
+}
+
 export interface IGardenResult {
   id: number;
   name: string;

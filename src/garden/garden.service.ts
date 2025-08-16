@@ -4,9 +4,15 @@ import { UpdateGardenDto } from './dto/update-garden.dto';
 import { GardenRepository } from './repositories/garden.repository';
 import { ErrorService } from '../common/error/error.service';
 import { WoodService } from '../wood/wood.service';
-import { IGardenResponse, IGardenResult } from './interfaces/garden.interface';
+import {
+  IGardenReportResponse,
+  IGardenResponse,
+  IGardenResult,
+} from './interfaces/garden.interface';
 import { IAuth } from '../auth/interfaces/auth.interface';
 import { UserRole } from '../../generated/prisma';
+import { GetReportQueryDto } from './dto/get-garden.dto';
+import { PrismaService } from '../common/prisma/prisma.service';
 
 @Injectable()
 export class GardenService {
@@ -14,6 +20,7 @@ export class GardenService {
     private gardenRepository: GardenRepository,
     private woodService: WoodService,
     private errorService: ErrorService,
+    private prismaService: PrismaService,
   ) {}
 
   async create(payload: CreateGardenDto): Promise<IGardenResponse> {
@@ -118,6 +125,26 @@ export class GardenService {
     );
   }
 
+  async report(query?: GetReportQueryDto): Promise<IGardenReportResponse[]> {
+    const { startDate, endDate } = this.getMonthDateRange(query.month);
+
+    const gardens = await this.prismaService.transaction.groupBy({
+      by: ['gardenName', 'woodName'],
+      _sum: {
+        woodPiecesQty: true,
+      },
+      where: {
+        createdAt: {
+          gte: startDate,
+          lt: endDate,
+        },
+      },
+      orderBy: [{ gardenName: 'asc' }, { woodName: 'asc' }],
+    });
+
+    return this.toGardenReportResponse(gardens);
+  }
+
   private gardenSelectOptions = {
     id: true,
     name: true,
@@ -157,5 +184,34 @@ export class GardenService {
         quantity: w.quantity,
       })),
     };
+  }
+
+  toGardenReportResponse(gardens) {
+    return gardens.reduce((acc, curr) => {
+      const garden = acc.find((g) => g.name === curr.gardenName);
+
+      const woodData = {
+        name: curr.woodName,
+        total: curr._sum.woodPiecesQty ?? 0,
+      };
+
+      if (garden) {
+        garden.woods.push(woodData);
+      } else {
+        acc.push({
+          name: curr.gardenName,
+          woods: [woodData],
+        });
+      }
+
+      return acc;
+    }, []);
+  }
+
+  private getMonthDateRange(month: string) {
+    const startDate = new Date(`${month}-01`);
+    const endDate = new Date(startDate);
+    endDate.setMonth(startDate.getMonth() + 1);
+    return { startDate, endDate };
   }
 }

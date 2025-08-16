@@ -8,6 +8,8 @@ import {
   Delete,
   Req,
   ParseIntPipe,
+  HttpCode,
+  Query,
 } from '@nestjs/common';
 import { GardenService } from './garden.service';
 import { CreateGardenDto } from './dto/create-garden.dto';
@@ -16,9 +18,13 @@ import { UserRole } from '../../generated/prisma';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { Roles } from '../auth/decorators/role.decorator';
 import { StatusResponse } from '../common/enums/web.enum';
-import { IGardenResponse } from './interfaces/garden.interface';
+import {
+  IGardenReportResponse,
+  IGardenResponse,
+} from './interfaces/garden.interface';
 import { IWebResponse } from '../common/interfaces/web.interface';
 import { IAuth } from '../auth/interfaces/auth.interface';
+import { GetReportQueryDto } from './dto/get-garden.dto';
 
 @Controller('garden')
 export class GardenController {
@@ -26,6 +32,7 @@ export class GardenController {
 
   @Auth()
   @Roles(UserRole.ADMIN)
+  @HttpCode(201)
   @Post()
   async create(
     @Body() payload: CreateGardenDto,
@@ -45,6 +52,20 @@ export class GardenController {
     const result = await this.gardenService.findAll(auth);
     return {
       status: StatusResponse.SUCCESS,
+      data: result,
+    };
+  }
+
+  @Auth()
+  @Roles(UserRole.ADMIN)
+  @Get('report')
+  async report(
+    @Query() query: GetReportQueryDto,
+  ): Promise<IWebResponse<IGardenReportResponse[]>> {
+    const result = await this.gardenService.report(query);
+    return {
+      status: StatusResponse.SUCCESS,
+      message: `Laporan Kebun ${query.month}`,
       data: result,
     };
   }

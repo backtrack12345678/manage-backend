@@ -8,9 +8,19 @@ import { WoodModule } from './wood/wood.module';
 import { VehicleModule } from './vehicle/vehicle.module';
 import { CustomerModule } from './customer/customer.module';
 import { GardenModule } from './garden/garden.module';
+import { TransactionModule } from './transaction/transaction.module';
 
 @Module({
-  imports: [CommonModule, AuthModule, UserModule, WoodModule, VehicleModule, CustomerModule, GardenModule],
+  imports: [
+    CommonModule,
+    AuthModule,
+    UserModule,
+    WoodModule,
+    VehicleModule,
+    CustomerModule,
+    GardenModule,
+    TransactionModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

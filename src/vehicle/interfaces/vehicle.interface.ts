@@ -5,3 +5,8 @@ export interface IVehicleResponse {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface IVehicleReportResponse {
+  name: string;
+  total: number;
+}

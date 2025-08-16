@@ -8,6 +8,8 @@ import {
   Delete,
   Req,
   ParseIntPipe,
+  HttpCode,
+  Query,
 } from '@nestjs/common';
 import { VehicleService } from './vehicle.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
@@ -17,8 +19,12 @@ import { Auth } from '../auth/decorators/auth.decorator';
 import { Roles } from '../auth/decorators/role.decorator';
 import { StatusResponse } from '../common/enums/web.enum';
 import { IWebResponse } from '../common/interfaces/web.interface';
-import { IVehicleResponse } from './interfaces/vehicle.interface';
+import {
+  IVehicleReportResponse,
+  IVehicleResponse,
+} from './interfaces/vehicle.interface';
 import { IAuth } from '../auth/interfaces/auth.interface';
+import { GetReportQueryDto } from './dto/get-vehicle.dto';
 
 @Controller('vehicle')
 export class VehicleController {
@@ -26,6 +32,7 @@ export class VehicleController {
 
   @Auth()
   @Roles(UserRole.ADMIN)
+  @HttpCode(201)
   @Post()
   async create(
     @Body() payload: CreateVehicleDto,
@@ -47,6 +54,20 @@ export class VehicleController {
     const result = await this.vehicleService.findAll(auth);
     return {
       status: StatusResponse.SUCCESS,
+      data: result,
+    };
+  }
+
+  @Auth()
+  @Roles(UserRole.ADMIN, UserRole.SPV)
+  @Get('report')
+  async report(
+    @Query() query: GetReportQueryDto,
+  ): Promise<IWebResponse<IVehicleReportResponse[]>> {
+    const result = await this.vehicleService.report(query);
+    return {
+      status: StatusResponse.SUCCESS,
+      message: `Laporan Kebun ${query.month}`,
       data: result,
     };
   }

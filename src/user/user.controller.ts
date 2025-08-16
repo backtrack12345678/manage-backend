@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Req,
+  HttpCode,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -25,6 +26,7 @@ export class UserController {
 
   @Auth()
   @Roles(UserRole.ADMIN)
+  @HttpCode(201)
   @Post()
   async create(
     @Body() payload: CreateUserDto,

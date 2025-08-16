@@ -19,7 +19,7 @@ export class CreateWoodDto {
     message:
       'Price harus berupa string angka minimal 0 dan maksimal 9999999999999999.99 (DECIMAL(18,2)). Contoh: "0", "1000", atau "9999999999999999.99"',
   })
-  price: number;
+  price: string;
 
   @IsNotEmpty()
   @IsEnum(WoodUnit)

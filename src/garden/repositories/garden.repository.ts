@@ -89,4 +89,39 @@ export class GardenRepository {
       totalQuantity: item._sum.quantity || 0,
     }));
   }
+
+  async getGardenWoodByIds<T extends Prisma.GardenWoodSelect>(
+    gardenId: number,
+    woodId: number,
+    selectOptions?: T,
+  ): Promise<Prisma.GardenWoodGetPayload<{ select: T }>> {
+    return this.prismaService.gardenWood.findFirst({
+      where: {
+        gardenId,
+        woodId,
+      },
+      select: selectOptions || undefined,
+    });
+  }
+
+  async decrementQuantity(
+    gardenId: number,
+    woodId: number,
+    qty: number,
+    prismaClient: Prisma.TransactionClient | PrismaService = this.prismaService,
+  ): Promise<{ quantity: number }> {
+    return prismaClient.gardenWood.update({
+      where: {
+        gardenId_woodId: { gardenId, woodId },
+      },
+      data: {
+        quantity: {
+          decrement: qty,
+        },
+      },
+      select: {
+        quantity: true,
+      },
+    });
+  }
 }

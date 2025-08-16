@@ -20,6 +20,18 @@ enum WoodUnit {
   KENDARAAN
 }
 
+enum TransactionStatus {
+  PENDING
+  DITERIMA
+  DITOLAK
+}
+
+enum TransactionType {
+  BELUM_DIBAYAR
+  LUNAS
+  UTANG
+}
+
 model User {
   id       String   @id @db.VarChar(150)
   username String   @unique @db.VarChar(20)
@@ -28,10 +40,12 @@ model User {
   role     UserRole @default(ADMIN)
   isActive Boolean  @default(true) @map("is_active")
 
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime?      @updatedAt @map("updated_at")
-  woodPriceLogs WoodPriceLog[]
-  refreshToken  Refresh_Token?
+  createdAt            DateTime               @default(now()) @map("created_at")
+  updatedAt            DateTime?              @updatedAt @map("updated_at")
+  woodPriceLogs        WoodPriceLog[]
+  refreshToken         Refresh_Token?
+  transactions         Transaction[]
+  transactionValidated TransactionValidator[]
 
   @@map("user")
 }
@@ -41,9 +55,10 @@ model Garden {
   name     String  @db.VarChar(100)
   isActive Boolean @default(true) @map("is_active")
 
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime?    @updatedAt @map("updated_at")
-  woods     GardenWood[]
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime?     @updatedAt @map("updated_at")
+  woods        GardenWood[]
+  transactions Transaction[]
 
   @@map("garden")
 }
@@ -55,10 +70,11 @@ model Wood {
   unit     WoodUnit
   isActive Boolean  @default(true) @map("is_active")
 
-  createdAt DateTime       @default(now()) @map("created_at")
-  updatedAt DateTime?      @updatedAt @map("updated_at")
-  priceLogs WoodPriceLog[]
-  gardens   GardenWood[]
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime?      @updatedAt @map("updated_at")
+  priceLogs    WoodPriceLog[]
+  gardens      GardenWood[]
+  transactions Transaction[]
 
   @@map("wood")
 }
@@ -99,8 +115,9 @@ model Vehicle {
   name     String  @db.VarChar(100)
   isActive Boolean @default(true) @map("is_active")
 
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime? @updatedAt @map("updated_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime?     @updatedAt @map("updated_at")
+  transactions Transaction[]
 
   @@map("vehicle")
 }
@@ -110,19 +127,69 @@ model Customer {
   name     String  @db.VarChar(100)
   isActive Boolean @default(true) @map("is_active")
 
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime? @updatedAt @map("updated_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime?     @updatedAt @map("updated_at")
+  transactions Transaction[]
 
   @@map("customer")
 }
 
-model HistoryTransaction {
+model Transaction {
   id String @id @db.VarChar(150)
+
+  userId    String @map("user_id") @db.VarChar(150)
+  createdBy User   @relation(fields: [userId], references: [id])
+
+  gardenId   Int    @map("garden_id")
+  garden     Garden @relation(fields: [gardenId], references: [id])
+  gardenName String @map("garden_name") @db.VarChar(100)
+
+  customerId   Int      @map("customer_id")
+  customer     Customer @relation(fields: [customerId], references: [id])
+  customerName String   @map("customer_name") @db.VarChar(100)
+
+  vehicleId     Int     @map("vehicle_id")
+  vehicle       Vehicle @relation(fields: [vehicleId], references: [id])
+  vehicleName   String  @map("vehicle_name") @db.VarChar(100)
+  vehicleNumber String  @map("vehicle_number") @db.VarChar(20)
+
+  woodId        Int      @map("wood_id")
+  wood          Wood     @relation(fields: [woodId], references: [id])
+  woodName      String   @map("wood_name") @db.VarChar(100)
+  woodPrice     Decimal  @map("wood_price") @db.Decimal(18, 2)
+  woodUnit      WoodUnit
+  woodPiecesQty Int      @map("wood_pieces_qty")
+  woodUnitsqty  Int?     @map("wood_units_qty")
+
+  totalPrice Decimal? @map("total_price") @db.Decimal(18, 2)
+  totalPaid  Decimal? @map("total_paid") @db.Decimal(18, 2)
+
+  status TransactionStatus @default(PENDING)
+  type   TransactionType?
+
+  namaFile String @map("nama_file") @db.VarChar(150)
+  path     String @db.VarChar(150)
+
+  validatedBy TransactionValidator?
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
 
-  @@map("history_Transaction")
+  @@map("transaction")
+}
+
+model TransactionValidator {
+  id           Int         @id @default(autoincrement())
+  tranactionId String      @unique @map("transaction_id") @db.VarChar(150)
+  transaction  Transaction @relation(fields: [tranactionId], references: [id], onDelete: Cascade)
+
+  userId String @map("user_id") @db.VarChar(150)
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("transaction_validator")
 }
 
 model Refresh_Token {

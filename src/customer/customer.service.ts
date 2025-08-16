@@ -45,6 +45,18 @@ export class CustomerService {
     return customer;
   }
 
+  async findOneWithoutAuth(id: number): Promise<ICustomerResponse> {
+    const customer = await this.customerRepository.getCustomerById(
+      id,
+      this.customerSelectOptions,
+    );
+
+    if (!customer || !customer.isActive)
+      this.errorService.notFound('Pemilik Tidak Ditemukan');
+
+    return customer;
+  }
+
   async update(
     id: number,
     payload: UpdateCustomerDto,

@@ -8,5 +8,6 @@ import { WoodModule } from '../wood/wood.module';
   imports: [WoodModule],
   controllers: [GardenController],
   providers: [GardenService, GardenRepository],
+  exports: [GardenRepository],
 })
 export class GardenModule {}

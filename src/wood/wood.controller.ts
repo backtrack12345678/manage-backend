@@ -8,6 +8,7 @@ import {
   Delete,
   ParseIntPipe,
   Req,
+  HttpCode,
 } from '@nestjs/common';
 import { WoodService } from './wood.service';
 import { CreateWoodDto } from './dto/create-wood.dto';
@@ -26,6 +27,7 @@ export class WoodController {
 
   @Auth()
   @Roles(UserRole.ADMIN)
+  @HttpCode(201)
   @Post()
   async create(
     @Body() payload: CreateWoodDto,
