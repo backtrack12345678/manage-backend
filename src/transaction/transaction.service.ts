@@ -383,7 +383,7 @@ export class TransactionService {
         unitsQty: tx.woodUnitsqty,
       },
       totalPrice: tx.totalPrice?.toString() ?? null, // ✅ decimal → string,
-      totalPaid: tx.totalPrice?.toString() ?? null,
+      totalPaid: tx.totalPaid?.toString() ?? null,
       status: tx.status,
       type: tx.type,
       urlFile: `${this.fileService.getHostFile(request)}/file/transaction/${tx.namaFile}`,
