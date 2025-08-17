@@ -56,4 +56,16 @@ export class TransactionRepository {
       select: selectOptions || undefined,
     });
   }
+
+  async deleteTransactionById<T extends Prisma.TransactionSelect>(
+    id: string,
+    selectOptions?: T,
+  ): Promise<Prisma.TransactionGetPayload<{ select: T }>> {
+    return this.prismaService.transaction.delete({
+      where: {
+        id,
+      },
+      select: selectOptions || undefined,
+    });
+  }
 }

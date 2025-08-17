@@ -27,6 +27,8 @@ import { FilesValidator } from '../file/pipes/files.validator';
 import { IAuth } from '../auth/interfaces/auth.interface';
 import { GetAllQueryDto } from './dto/get-transaction.dto';
 import { Request } from 'express';
+import { IWebResponse } from '../common/interfaces/web.interface';
+import { StatusResponse } from '../common/enums/web.enum';
 
 const allowedMimeTypes = {
   media: ['image/png', 'image/jpg', 'image/jpeg'],
@@ -68,7 +70,7 @@ export class TransactionController {
       request,
     );
     return {
-      status: 'success',
+      status: StatusResponse.SUCCESS,
       message: 'Transaksi Berhasil Dibuat',
       data: result,
     };
@@ -79,7 +81,7 @@ export class TransactionController {
   async findAll(@Req() request: Request, @Query() query?: GetAllQueryDto) {
     const result = await this.transactionService.findAll(request, query);
     return {
-      status: 'success',
+      status: StatusResponse.SUCCESS,
       data: result,
     };
   }
@@ -89,7 +91,7 @@ export class TransactionController {
   async findOne(@Req() request: Request, @Param('id') id: string) {
     const result = await this.transactionService.findOne(request, id);
     return {
-      status: 'success',
+      status: StatusResponse.SUCCESS,
       data: result,
     };
   }
@@ -118,7 +120,7 @@ export class TransactionController {
       request,
     );
     return {
-      status: 'success',
+      status: StatusResponse.SUCCESS,
       message: 'Transaksi Berhasil Divalidasi',
       data: result,
     };
@@ -138,14 +140,25 @@ export class TransactionController {
       request,
     );
     return {
-      status: 'success',
+      status: StatusResponse.SUCCESS,
       message: 'Tipe Transaksi Berhasil Diubah',
       data: result,
     };
   }
 
+  @Auth()
+  @Roles(UserRole.ADMIN, UserRole.SPV)
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.transactionService.remove(+id);
+  async remove(
+    @Req() request: any,
+    @Param('id') id: string,
+  ): Promise<IWebResponse<boolean>> {
+    const auth: IAuth = request.user;
+    await this.transactionService.remove(auth, id);
+    return {
+      status: StatusResponse.SUCCESS,
+      message: 'Transaksi Berhasil Dihapus',
+      data: true,
+    };
   }
 }

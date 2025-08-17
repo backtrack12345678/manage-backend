@@ -56,6 +56,18 @@ export class FileService {
     return { fileStream, mime };
   }
 
+  deleteFile(path: string): void {
+    if (fs.existsSync(path)) {
+      fs.unlink(path, (err) => {
+        if (err) {
+          console.error(`Failed to delete file: ${path}`, err);
+        }
+      });
+    } else {
+      console.error(`File not found: ${path}`);
+    }
+  }
+
   getHostFile(request: Request): string {
     const protocol: string =
       process.env.NODE_ENV === 'production' ? 'https' : request.protocol;

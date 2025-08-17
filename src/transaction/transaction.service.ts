@@ -174,7 +174,7 @@ export class TransactionService {
       auth.role !== UserRole.ADMIN
     ) {
       this.errorService.forbidden(
-        'Transaksi Sudah Divalidasi, Hanya Admin Yang Dapat Mengubah',
+        'Transaksi Sudah Diterima, Hanya Admin Yang Dapat Mengubah',
       );
     }
 
@@ -274,8 +274,31 @@ export class TransactionService {
     return this.toTransactionResponse(updatedValidatedTrasaction, request);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} transaction`;
+  async remove(auth: IAuth, id: string) {
+    const transaction = await this.transactionRepository.getTransactionById(
+      id,
+      {
+        status: true,
+      },
+    );
+
+    if (!transaction) this.errorService.notFound('Transaksi Tidak Ditemukan');
+
+    if (
+      transaction.status === TransactionStatus.DITERIMA &&
+      auth.role !== UserRole.ADMIN
+    ) {
+      this.errorService.forbidden(
+        'Transaksi Sudah Diterima, Hanya Admin Yang Dapat Menghapus',
+      );
+    }
+
+    const deletedTransaction =
+      await this.transactionRepository.deleteTransactionById(id, {
+        path: true,
+      });
+
+    this.fileService.deleteFile(deletedTransaction.path);
   }
 
   transactionSelectOptions = {
