@@ -96,13 +96,37 @@ export class TransactionController {
     };
   }
 
-  // @Patch(':id')
-  // update(
-  //   @Param('id') id: string,
-  //   @Body() updateTransactionDto: UpdateTransactionDto,
-  // ) {
-  //   return this.transactionService.update(+id, updateTransactionDto);
-  // }
+  @Auth()
+  @Roles(UserRole.ADMIN, UserRole.SPV)
+  @Patch(':id')
+  @UseInterceptors(
+    FileInterceptor('media', {
+      limits: {
+        fileSize: 20 * 1024 * 1024,
+      },
+    }),
+  )
+  async update(
+    @Req() request: Request,
+    @Param('id') id: string,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addValidator(
+          new FilesValidator({
+            mimeTypes: allowedMimeTypes,
+          }),
+        )
+        .build(),
+    )
+    media: Express.Multer.File,
+  ) {
+    const result = await this.transactionService.update(request, id, media);
+    return {
+      status: StatusResponse.SUCCESS,
+      message: 'Bukti Transaksi Berhasil Diperbarui',
+      data: result,
+    };
+  }
 
   @Auth()
   @Roles(UserRole.ADMIN, UserRole.SPV)

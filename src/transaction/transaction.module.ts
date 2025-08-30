@@ -5,9 +5,10 @@ import { TransactionRepository } from './repositories/transaction.repository';
 import { GardenModule } from '../garden/garden.module';
 import { CustomerModule } from '../customer/customer.module';
 import { VehicleModule } from '../vehicle/vehicle.module';
+import { WoodModule } from '../wood/wood.module';
 
 @Module({
-  imports: [GardenModule, CustomerModule, VehicleModule],
+  imports: [GardenModule, CustomerModule, VehicleModule, WoodModule],
   controllers: [TransactionController],
   providers: [TransactionService, TransactionRepository],
   exports: [TransactionRepository],

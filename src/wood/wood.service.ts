@@ -52,6 +52,18 @@ export class WoodService {
     return this.toWoodResponse(wood);
   }
 
+  async findOneWithoutAuth(id: number) {
+    const wood = await this.woodRepository.getWoodById(
+      id,
+      this.woodSelectOptions,
+    );
+
+    if (!wood || !wood.isActive)
+      this.errorService.notFound('kayu Tidak Ditemukan');
+
+    return wood;
+  }
+
   async update(
     auth: IAuth,
     id: number,

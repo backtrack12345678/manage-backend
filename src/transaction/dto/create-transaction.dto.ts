@@ -1,7 +1,9 @@
 import { Transform } from 'class-transformer';
 import {
+  IsDate,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsPositive,
   IsString,
   MaxLength,
@@ -42,4 +44,10 @@ export class CreateTransactionDto {
   @IsPositive()
   @Transform(({ value }) => parseInt(value, 10))
   woodPiecesQty: number;
+
+  @IsOptional()
+  @IsNotEmpty()
+  @Transform(({ value }) => new Date(value))
+  @IsDate()
+  date: Date;
 }

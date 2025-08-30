@@ -60,67 +60,22 @@ export class GardenRepository {
     });
   }
 
-  async getTotalQuantityByGardenId(id: number): Promise<number> {
-    const totalQuantity = await this.prismaService.gardenWood.aggregate({
-      where: {
-        gardenId: id,
-      },
-      _sum: {
-        quantity: true,
-      },
-    });
-
-    return totalQuantity._sum.quantity;
-  }
-
-  async getTotalQuantityByGardenIds(ids: number[]) {
-    const whereCondition = ids.length > 0 ? { gardenId: { in: ids } } : {};
-
-    const result = await this.prismaService.gardenWood.groupBy({
-      by: ['gardenId'],
-      where: whereCondition,
-      _sum: {
-        quantity: true,
-      },
-    });
-
-    return result.map((item) => ({
-      gardenId: item.gardenId,
-      totalQuantity: item._sum.quantity || 0,
-    }));
-  }
-
-  async getGardenWoodByIds<T extends Prisma.GardenWoodSelect>(
-    gardenId: number,
-    woodId: number,
-    selectOptions?: T,
-  ): Promise<Prisma.GardenWoodGetPayload<{ select: T }>> {
-    return this.prismaService.gardenWood.findFirst({
-      where: {
-        gardenId,
-        woodId,
-      },
-      select: selectOptions || undefined,
-    });
-  }
-
   async decrementQuantity(
-    gardenId: number,
-    woodId: number,
+    id: number,
     qty: number,
     prismaClient: Prisma.TransactionClient | PrismaService = this.prismaService,
-  ): Promise<{ quantity: number }> {
-    return prismaClient.gardenWood.update({
+  ) {
+    return prismaClient.garden.update({
       where: {
-        gardenId_woodId: { gardenId, woodId },
+        id,
       },
       data: {
-        quantity: {
+        woodPiecesQtyActual: {
           decrement: qty,
         },
       },
       select: {
-        quantity: true,
+        woodPiecesQtyActual: true,
       },
     });
   }

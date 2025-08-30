@@ -1,13 +1,10 @@
-import { Type } from 'class-transformer';
 import {
-  IsArray,
   IsInt,
   IsNotEmpty,
-  IsOptional,
   IsPositive,
   IsString,
+  Matches,
   MaxLength,
-  ValidateNested,
 } from 'class-validator';
 
 export class CreateGardenDto {
@@ -16,19 +13,14 @@ export class CreateGardenDto {
   @MaxLength(100)
   name: string;
 
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateGardenWoodDto)
-  woods?: CreateGardenWoodDto[];
-}
-
-class CreateGardenWoodDto {
   @IsInt()
   @IsPositive()
-  woodId: number;
+  woodPiecesQty: number;
 
-  @IsInt()
-  @IsPositive()
-  quantity: number;
+  @IsNotEmpty()
+  @Matches(/^(0|[1-9]\d{0,15})(\.\d{1,2})?$/, {
+    message:
+      'woodPiecesCostPrice harus berupa string angka minimal 0 dan maksimal 9999999999999999.99 (DECIMAL(18,2)). Contoh: "0", "1000", atau "9999999999999999.99"',
+  })
+  woodPiecesCostPrice: string;
 }

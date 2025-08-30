@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { ValidateTransactionDto } from './dto/update-transaction.dto';
-import { GardenRepository } from '../garden/repositories/garden.repository';
 import { ErrorService } from '../common/error/error.service';
 import { VehicleService } from '../vehicle/vehicle.service';
 import { CustomerService } from '../customer/customer.service';
@@ -19,17 +18,22 @@ import {
   TransactionType,
   UserRole,
 } from '../../generated/prisma';
+import { GardenService } from '../garden/garden.service';
+import { WoodService } from '../wood/wood.service';
+import { GardenRepository } from '../garden/repositories/garden.repository';
 
 @Injectable()
 export class TransactionService {
   constructor(
     private errorService: ErrorService,
-    private gardenRepository: GardenRepository,
+    private gardenService: GardenService,
     private transactionRepository: TransactionRepository,
     private customerService: CustomerService,
     private vehicleService: VehicleService,
     private prismaService: PrismaService,
     private fileService: FileService,
+    private woodService: WoodService,
+    private gardenRepository: GardenRepository,
   ) {}
 
   async create(
@@ -38,27 +42,10 @@ export class TransactionService {
     media: Express.Multer.File,
     request: Request,
   ) {
-    const garden = await this.gardenRepository.getGardenWoodByIds(
+    const garden = await this.gardenService.findOneWithoutAuth(
       payload.gardenId,
-      payload.woodId,
-      {
-        garden: {
-          select: {
-            name: true,
-          },
-        },
-        wood: {
-          select: {
-            name: true,
-            price: true,
-            unit: true,
-          },
-        },
-      },
     );
-
-    if (!garden) this.errorService.notFound('Kebun Atau Kayu Tidak Ditemukan');
-
+    const wood = await this.woodService.findOneWithoutAuth(payload.woodId);
     const customer = await this.customerService.findOneWithoutAuth(
       payload.customerId,
     );
@@ -72,6 +59,9 @@ export class TransactionService {
     );
 
     const id = `transaction-${uuid().toString()}`;
+    const totalCost = new Decimal(payload.woodPiecesQty).times(
+      garden.woodPiecesCostPrice,
+    );
     const createdTransaction = await this.prismaService.$transaction(
       async (tx) => {
         const transaction = await this.transactionRepository.createTransaction(
@@ -79,27 +69,29 @@ export class TransactionService {
             id,
             userId: auth.id,
             ...payload,
-            gardenName: garden.garden.name,
+            gardenName: garden.name,
             customerName: customer.name,
             vehicleName: vehicle.name,
-            woodName: garden.wood.name,
-            woodPrice: garden.wood.price,
-            woodUnit: garden.wood.unit,
+            woodName: wood.name,
+            woodPrice: wood.price,
+            woodUnit: wood.unit,
+            totalCost,
             namaFile: uploadedMedia.fileName,
             path: uploadedMedia.filePath,
+            createdAt: payload.date || undefined,
           },
           this.transactionSelectOptions,
           tx,
         );
 
-        const wood = await this.gardenRepository.decrementQuantity(
-          payload.gardenId,
-          payload.woodId,
-          payload.woodPiecesQty,
-          tx,
-        );
+        const { woodPiecesQtyActual } =
+          await this.gardenRepository.decrementQuantity(
+            payload.gardenId,
+            payload.woodPiecesQty,
+            tx,
+          );
 
-        if (wood.quantity < 0) {
+        if (woodPiecesQtyActual < 0) {
           this.errorService.badRequest('Stok Kayu Tidak Mencukupi');
         }
 
@@ -117,24 +109,31 @@ export class TransactionService {
       this.transactionOtherOptions(query),
     );
 
-    const { totalPrice, totalDebt } = transactions.reduce(
+    const { totalPrice, totalDebt, totalCost } = transactions.reduce(
       (acc, tx) => {
         const price = new Decimal(tx.totalPrice || 0);
         const paid = new Decimal(tx.totalPaid || 0);
+        const cost = new Decimal(tx.totalCost || 0);
 
         acc.totalPrice = acc.totalPrice.plus(price);
         acc.totalDebt = acc.totalDebt.plus(price.minus(paid));
+        acc.totalCost = acc.totalCost.plus(cost);
 
         return acc;
       },
-      { totalPrice: new Decimal(0), totalDebt: new Decimal(0) },
+      {
+        totalPrice: new Decimal(0),
+        totalDebt: new Decimal(0),
+        totalCost: new Decimal(0),
+      },
     );
 
     return {
       customer: query.customerName || 'All',
       month: query.month,
-      totalPrice: totalPrice,
-      totalDebt: totalDebt,
+      totalPrice,
+      totalDebt,
+      totalCost,
       transactions: transactions.map((tx) =>
         this.toTransactionResponse(tx, request),
       ),
@@ -152,9 +151,40 @@ export class TransactionService {
     return this.toTransactionResponse(transaction, request);
   }
 
-  // update(id: number, updateTransactionDto: UpdateTransactionDto) {
-  //   return `This action updates a #${id} transaction`;
-  // }
+  async update(request: Request, id: string, media: Express.Multer.File) {
+    const transaction = await this.transactionRepository.getTransactionById(
+      id,
+      {
+        id: true,
+        namaFile: true,
+        path: true,
+      },
+    );
+
+    if (!transaction) this.errorService.notFound('Transaksi Tidak Ditemukan');
+
+    const oldMedia = transaction.path;
+    const { fileName, filePath } = await this.fileService.writeFileStream(
+      media,
+      'transaction',
+    );
+
+    const updatedTransaction =
+      await this.transactionRepository.updateTransactionById(
+        id,
+        {
+          namaFile: fileName,
+          path: filePath,
+        },
+        this.transactionSelectOptions,
+      );
+
+    if (transaction.namaFile !== 'default_transaction.jpg') {
+      this.fileService.deleteFile(oldMedia);
+    }
+
+    return this.toTransactionResponse(updatedTransaction, request);
+  }
 
   async validate(
     auth: IAuth,
@@ -324,6 +354,7 @@ export class TransactionService {
     woodUnitsqty: true,
     totalPrice: true,
     totalPaid: true,
+    totalCost: true,
     status: true,
     type: true,
     namaFile: true,
@@ -407,6 +438,7 @@ export class TransactionService {
       },
       totalPrice: tx.totalPrice?.toString() ?? null, // ✅ decimal → string,
       totalPaid: tx.totalPaid?.toString() ?? null,
+      totalCost: tx.totalCost?.toString() ?? null,
       status: tx.status,
       type: tx.type,
       urlFile: `${this.fileService.getHostFile(request)}/file/transaction/${tx.namaFile}`,

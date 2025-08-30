@@ -62,4 +62,4 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 uploads/transaction/*
 
 #unhide
-!uploads/transaction/.gitkeep
+!uploads/transaction/default_transaction.jpg

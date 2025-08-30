@@ -51,13 +51,15 @@ model User {
 }
 
 model Garden {
-  id       Int     @id @default(autoincrement())
-  name     String  @db.VarChar(100)
-  isActive Boolean @default(true) @map("is_active")
+  id                  Int      @id @default(autoincrement())
+  name                String   @db.VarChar(100)
+  woodPiecesQtyTarget Int?     @map("wood_pieces_qty_target")
+  woodPiecesQtyActual Int?     @map("wood_pieces_qty_actual")
+  woodPiecesCostPrice Decimal? @map("wood_pieces_cost_price") @db.Decimal(18, 2)
+  isActive            Boolean  @default(true) @map("is_active")
 
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime?     @updatedAt @map("updated_at")
-  woods        GardenWood[]
   transactions Transaction[]
 
   @@map("garden")
@@ -73,7 +75,6 @@ model Wood {
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime?      @updatedAt @map("updated_at")
   priceLogs    WoodPriceLog[]
-  gardens      GardenWood[]
   transactions Transaction[]
 
   @@map("wood")
@@ -93,21 +94,6 @@ model WoodPriceLog {
   updatedAt DateTime @default(now()) @map("updated_at")
 
   @@map("wood_price_log")
-}
-
-model GardenWood {
-  id       Int    @id @default(autoincrement())
-  gardenId Int
-  garden   Garden @relation(fields: [gardenId], references: [id], onDelete: Cascade)
-  woodId   Int
-  wood     Wood   @relation(fields: [woodId], references: [id], onDelete: Cascade)
-  quantity Int
-
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime? @updatedAt @map("updated_at")
-
-  @@unique([gardenId, woodId])
-  @@map("garden_wood")
 }
 
 model Vehicle {
@@ -163,11 +149,12 @@ model Transaction {
 
   totalPrice Decimal? @map("total_price") @db.Decimal(18, 2)
   totalPaid  Decimal? @map("total_paid") @db.Decimal(18, 2)
+  totalCost  Decimal? @map("total_cost") @db.Decimal(18, 2)
 
   status TransactionStatus @default(PENDING)
   type   TransactionType?
 
-  namaFile String @map("nama_file") @db.VarChar(150)
+  namaFile String @default("default_transaction.jpg") @map("nama_file") @db.VarChar(150)
   path     String @db.VarChar(150)
 
   validatedBy TransactionValidator?

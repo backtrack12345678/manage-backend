@@ -10,7 +10,7 @@ import {
   IGardenResult,
 } from './interfaces/garden.interface';
 import { IAuth } from '../auth/interfaces/auth.interface';
-import { UserRole } from '../../generated/prisma';
+import { Prisma, UserRole } from '../../generated/prisma';
 import { GetReportQueryDto } from './dto/get-garden.dto';
 import { PrismaService } from '../common/prisma/prisma.service';
 
@@ -24,69 +24,54 @@ export class GardenService {
   ) {}
 
   async create(payload: CreateGardenDto): Promise<IGardenResponse> {
-    const { woods = [], ...gardenData } = payload;
-
-    if (woods.length > 0) {
-      const ids = woods.map((w) => w.woodId);
-      await this.woodService.validateWoodsbyIds(ids);
-    }
-
     const garden = await this.gardenRepository.createGarden(
       {
-        ...gardenData,
-        ...(woods.length !== 0 && {
-          woods: {
-            createMany: {
-              data: woods,
-            },
-          },
-        }),
+        name: payload.name,
+        woodPiecesQtyTarget: payload.woodPiecesQty,
+        woodPiecesQtyActual: payload.woodPiecesQty,
+        woodPiecesCostPrice: Prisma.Decimal(payload.woodPiecesCostPrice),
       },
       {
         ...this.gardenSelectOptions,
-        ...this.gardenWoodsSelectOptions,
       },
     );
 
-    const totalWoodsQuantity =
-      await this.gardenRepository.getTotalQuantityByGardenId(garden.id);
-
-    return this.toGardenResponse(garden, totalWoodsQuantity);
+    return this.toGardenResponse(garden);
   }
 
-  async findAll(auth: IAuth) {
+  async findAll(auth: IAuth): Promise<IGardenResponse[]> {
     const whereOptions = auth.role !== UserRole.ADMIN ? { isActive: true } : {};
     const gardens = await this.gardenRepository.getGardens(
       {
         ...this.gardenSelectOptions,
-        ...this.gardenWoodsSelectOptions,
       },
       whereOptions,
     );
 
-    const gardenIds = gardens.map((garden) => garden.id);
-
-    const totalWoodsQuantity =
-      await this.gardenRepository.getTotalQuantityByGardenIds(gardenIds);
-
-    return gardens.map((garden) =>
-      this.toGardenResponse(garden, totalWoodsQuantity),
-    );
+    return gardens.map((garden) => this.toGardenResponse(garden));
   }
 
   async findOne(auth: IAuth, id: number): Promise<IGardenResponse> {
     const garden = await this.gardenRepository.getGardenById(id, {
       ...this.gardenSelectOptions,
-      ...this.gardenWoodsSelectOptions,
     });
 
     if (!garden || (auth.role !== UserRole.ADMIN && !garden.isActive))
       this.errorService.notFound('Kendaraan Tidak Ditemukan');
 
-    const totalWoodsQuantity =
-      await this.gardenRepository.getTotalQuantityByGardenId(garden.id);
+    return this.toGardenResponse(garden);
+  }
 
-    return this.toGardenResponse(garden, totalWoodsQuantity);
+  async findOneWithoutAuth(id: number) {
+    const garden = await this.gardenRepository.getGardenById(
+      id,
+      this.gardenSelectOptions,
+    );
+
+    if (!garden || !garden.isActive)
+      this.errorService.notFound('Kebun Tidak Ditemukan');
+
+    return garden;
   }
 
   async update(id: number, payload: UpdateGardenDto): Promise<IGardenResponse> {
@@ -98,13 +83,9 @@ export class GardenService {
 
     const garden = await this.gardenRepository.updateGardenById(id, payload, {
       ...this.gardenSelectOptions,
-      ...this.gardenWoodsSelectOptions,
     });
 
-    const totalWoodsQuantity =
-      await this.gardenRepository.getTotalQuantityByGardenId(garden.id);
-
-    return this.toGardenResponse(garden, totalWoodsQuantity);
+    return this.toGardenResponse(garden);
   }
 
   async remove(id: number): Promise<void> {
@@ -148,6 +129,9 @@ export class GardenService {
   private gardenSelectOptions = {
     id: true,
     name: true,
+    woodPiecesQtyTarget: true,
+    woodPiecesQtyActual: true,
+    woodPiecesCostPrice: true,
     isActive: true,
     createdAt: true,
     updatedAt: true,
@@ -164,25 +148,12 @@ export class GardenService {
     },
   };
 
-  toGardenResponse(
-    garden: IGardenResult,
-    totalQuantity?: number | { gardenId: number; totalQuantity: number }[],
-  ) {
-    const { woods: woodsResult = [], ...gardenResult } = garden;
-
-    const totalWoodsQuantity =
-      typeof totalQuantity === 'number'
-        ? totalQuantity
-        : (totalQuantity?.find((q) => q.gardenId === garden.id)
-            ?.totalQuantity ?? 0);
+  toGardenResponse(garden: IGardenResult) {
+    const { woodPiecesCostPrice, ...gardenResult } = garden;
 
     return {
       ...gardenResult,
-      totalWoodsQuantity,
-      woods: woodsResult?.map((w) => ({
-        ...this.woodService.toWoodResponse(w.wood),
-        quantity: w.quantity,
-      })),
+      woodPiecesCostPrice: woodPiecesCostPrice.toString(),
     };
   }
 

@@ -1,16 +1,14 @@
-import {
-  IWoodResponse,
-  IWoodResult,
-} from '../../wood/interfaces/wood.interface';
+import { Prisma } from '../../../generated/prisma';
 
 export interface IGardenResponse {
   id: number;
   name: string;
+  woodPiecesQtyTarget: number;
+  woodPiecesQtyActual: number;
+  woodPiecesCostPrice: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  totalWoodsQuantity?: number;
-  woods?: IGardenWoodsResponse[];
 }
 
 export interface IGardenReportResponse {
@@ -24,15 +22,10 @@ export interface IGardenReportResponse {
 export interface IGardenResult {
   id: number;
   name: string;
+  woodPiecesQtyTarget: number;
+  woodPiecesQtyActual: number;
+  woodPiecesCostPrice: Prisma.Decimal;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  woods?: {
-    wood: IWoodResult;
-    quantity: number;
-  }[];
-}
-
-export interface IGardenWoodsResponse extends IWoodResponse {
-  quantity: number;
 }

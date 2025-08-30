@@ -84,20 +84,20 @@ export class GardenController {
     };
   }
 
-  @Auth()
-  @Roles(UserRole.ADMIN)
-  @Patch(':id')
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() payload: UpdateGardenDto,
-  ): Promise<IWebResponse<IGardenResponse>> {
-    const result = await this.gardenService.update(id, payload);
-    return {
-      status: StatusResponse.SUCCESS,
-      message: 'Kebun Berhasil Diperbarui',
-      data: result,
-    };
-  }
+  // @Auth()
+  // @Roles(UserRole.ADMIN)
+  // @Patch(':id')
+  // async update(
+  //   @Param('id', ParseIntPipe) id: number,
+  //   @Body() payload: UpdateGardenDto,
+  // ): Promise<IWebResponse<IGardenResponse>> {
+  //   const result = await this.gardenService.update(id, payload);
+  //   return {
+  //     status: StatusResponse.SUCCESS,
+  //     message: 'Kebun Berhasil Diperbarui',
+  //     data: result,
+  //   };
+  // }
 
   @Auth()
   @Roles(UserRole.ADMIN)
